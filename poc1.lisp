@@ -1,4 +1,4 @@
-// Proof of concept for the MLL format
+// Proof of concept for the MLL format mixed with csv
 // ;title;album;artist;year;number of notes;comment
 ;Song;;Artist;2023;12;This is a test song. You can put a semicolon there ; it's the last field after all. The first character of the first real line define the separator.
 (
