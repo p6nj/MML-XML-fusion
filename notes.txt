@@ -1,1 +1,3 @@
+the interface's text input field will hide everything but notes, so that each character takes up to one space for lisibility. This allows to type directly the current rhythm while writing your song with a keyboard.
 poc3 done for easy parsing and mask, need a relational diagram for clear thought.
+percentages will fit in a u8 so they will go up to 255 but they can probably work with a total of 100 on the interface, allowing an overload (i.e. 110%).
