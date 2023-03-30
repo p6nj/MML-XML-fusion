@@ -4,7 +4,7 @@
         (S Song
             (A Artist                       ; in this case there may be multiple artists in this song, and the nested note scope is made by this artist
                 (N                          ; note definition, overrides default note def (c, C, d, D...) with the first argument being the only wrapper node (notes expand right after)
-                    (c name                 ; "channel" with a name from which singletons can be found
+                    (C name                 ; "channel" with a name from which singletons can be found
                         a b c               ; normal notes with default length and octave
                         (l 4 d e)           ; length with the number of notes in a beat (DIFFERENT from decimal rhythm representation, here odd numbers are tuplets)
                         (o 4 d e)           ; octave 
