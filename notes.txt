@@ -1,0 +1,1 @@
+poc3 done for easy parsing and mask, need a relational diagram for clear thought.
