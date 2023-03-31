@@ -1,4 +1,5 @@
 // Proof of concept for the MLL format in its hierarchical form, digits for notes
+// Notes names are strings, which means they can contain multiple characters and it won't alter parsing performance of the interface-side text as every chunk of characters (if recognized as a note) will have its own note linked using the text index.
 (Y Year
     (A Album
         (S Song
