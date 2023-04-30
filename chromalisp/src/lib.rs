@@ -1,4 +1,5 @@
-#[allow(unused,dead_code)]
+mod parsers;
+#[allow(unused, dead_code)]
 mod structure;
 
 pub fn add(left: usize, right: usize) -> usize {
