@@ -217,29 +217,29 @@ trait Tagging {
     fn tag(&self) -> char;
 }
 
-impl Tagging for Wrappers{
+impl Tagging for Wrappers {
     fn tag(&self) -> char {
-        match self{
+        match self {
             Wrappers::Song(_, _) => 'S',
             Wrappers::Album(_, _) => 'A',
             Wrappers::Artist(_, _) => 'a',
             Wrappers::Year(_, _) => 'Y',
             Wrappers::Tempo(_, _) => 'T',
             Wrappers::Accel(_, _) => 't',
-            Wrappers::NoteDef(_, _) => '',
-            Wrappers::Channel(_) => '',
-            Wrappers::Instrument(_, _) => '',
-            Wrappers::Length(_, _) => '',
-            Wrappers::Octave(_, _) => '',
-            Wrappers::Loop(_, _) => '',
-            Wrappers::Glissando(_, _) => '',
-            Wrappers::Vibrato(_, _, _) => '',
-            Wrappers::Volume(_, _) => '',
-            Wrappers::VolumeFader(_, _) => '',
-            Wrappers::ADSR(_, _) => '',
-            Wrappers::Singleton(_) => '',
-            Wrappers::Mask(_, _) => '',
-            Wrappers::Masked(_, _) => '',
+            Wrappers::NoteDef(_, _) => 'N',
+            Wrappers::Channel(_) => 'C',
+            Wrappers::Instrument(_, _) => 'I',
+            Wrappers::Length(_, _) => 'l',
+            Wrappers::Octave(_, _) => 'o',
+            Wrappers::Loop(_, _) => 'x',
+            Wrappers::Glissando(_, _) => 'G',
+            Wrappers::Vibrato(_, _, _) => 'V',
+            Wrappers::Volume(_, _) => 'v',
+            Wrappers::VolumeFader(_, _) => 'F',
+            Wrappers::ADSR(_, _) => '~',
+            Wrappers::Singleton(_) => unimplemented!(),
+            Wrappers::Mask(_, _) => 'M',
+            Wrappers::Masked(_, _) => 'm',
         }
     }
 }
