@@ -12,9 +12,9 @@ pub enum Items {
     Rest,
 }
 
-/// Slice of the duration of a note, used only for Repartition.
+/// Time relative to the duration of a note.
 /// Can be either static (in ms) or dynamic (in note length percentage up to 255).
-pub enum SliceTypes {
+pub enum Time {
     /// Static duration measured in milliseconds.
     Static(Duration),
     /// Dynamic duration measured in object length percentage up to 255.<br>
@@ -23,35 +23,40 @@ pub enum SliceTypes {
 }
 
 /// Repartition of the effect on the length of a nested note.
-/// Dictates which side(s) of the note will be affected by an effect.<br>
+/// Dictates which side(s) of the note will be affected by an effect.<br><br>
+/// <h4>Dev note:</h4>
+/// <i>
 /// Whole shouldn't be the same as a Start(Dynamic(255)) or something else as some effects have a different action on the start or end of the note and may act different if applied to a whole note. This way abstractions may be used to compare these two cases instead of using a normal attribute to theoretically speed up the process.
+/// </i>
 pub enum Repartition {
     /// Whole note.
     Whole,
     /// Only the start of the note.
-    Start(SliceTypes),
+    Start(Time),
     /// Only the end of the note.
-    End(SliceTypes),
+    End(Time),
     /// Both sides of the note.
-    BothSides { start: SliceTypes, end: SliceTypes },
+    BothSides { start: Time, end: Time },
 }
 
 /// Generic ADSR member.
 #[derive(new)]
 pub struct AdsrComponent {
     /// Time it takes to get to the final value (`until`).
-    time: Duration,
+    /// Can be calculated as a percentage of the note length left with the Time enum.
+    time: Time,
     /// Final value, percentage (255 max).
     until: u8,
 }
 
 impl Default for AdsrComponent {
     fn default() -> Self {
-        AdsrComponent::new(Duration::new(0, 0), 255)
+        AdsrComponent::new(Time::Static(Duration::from_secs(0)), 255)
     }
 }
 
 /// ADSR effect filter to control the volume of the note during a trigger.
+/// A pizz. effect can be achieved with ADSR.
 #[derive(new)]
 pub struct ADSR {
     attack: AdsrComponent,
@@ -167,10 +172,16 @@ pub enum Wrappers {
     Octave(u8, Vec<Wrappers>),
     /// Loops the underlying notes.
     Loop(u8, Vec<Wrappers>),
+    /// Apply a legato effect on some part of the underlying notes length.
     Legato(Repartition, Vec<Wrappers>),
+    /// Vibrato effect for some part of the underlying notes length.
     Vibrato(Repartition, VibratoConfig, Vec<Wrappers>),
+    /// Volume applied to underlying notes.
     Volume(Dynamics, Vec<Wrappers>),
+    /// Volume fade applied to underlying notes.
     VolumeFader(VolumeFadeConfig, Vec<Wrappers>),
+    /// ADSR applies a volume envelope to underlying notes.
     ADSR(ADSR, Vec<Wrappers>),
+    /// Single note or rest, the atom of the DOM.
     Singleton(Items), //TODO: finish this enum with elements found in Musescore
 }
