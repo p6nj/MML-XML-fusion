@@ -12,6 +12,11 @@ pub enum Items {
     Rest,
 }
 
+pub enum MaskItems {
+    Note(i8),
+    Rest,
+}
+
 /// Time relative to the duration of a note.
 /// Can be either static (in ms) or dynamic (in note length percentage up to 255).
 pub enum Time {
@@ -112,6 +117,9 @@ pub enum Instruments {
     Square(Tuning),
     /// Basic triangle wave.
     Triangle(Tuning),
+    /// Bounded white noise. Low and high are the percentage (/255) of low and high spectrum space allowed.<br>
+    /// Unbounded white noise has theoretically no recognizable tune so no note.
+    Noise { tuning: Tuning, low: u8, high: u8 },
     /// Waveform product between two boxed instruments.
     Product(Box<(Instruments, Instruments)>),
     /// Waveform sum between two boxed instruments (combines two waveforms).
@@ -146,6 +154,21 @@ pub struct AccelConfig {
     to: u8,
 }
 
+pub enum MaskType {
+    Rhythm,
+    Note,
+}
+
+/// Mask with a layer to apply on top of a note or multiple notes.
+/// Can either apply the rhythm on notes identified by their index in the masked scope or
+/// rhythm and notes applied either on all input notes (there must be as much input notes as
+/// mask notes) or one input note (to apply i.e. a tremolo effect).<br>
+/// A note applied on another note transposes it by addition (applying a 3 on a 1 gives a 4).
+pub struct Mask {
+    id: u8,
+    layer: Vec<MaskItems>,
+}
+
 /// Wrappers that can either contain an Item or another Wrappers with more information based on the variant.
 pub enum Wrappers {
     /// The title of the underlying song.
@@ -172,8 +195,8 @@ pub enum Wrappers {
     Octave(u8, Vec<Wrappers>),
     /// Loops the underlying notes.
     Loop(u8, Vec<Wrappers>),
-    /// Apply a legato effect on some part of the underlying notes length.
-    Legato(Repartition, Vec<Wrappers>),
+    /// Apply a glissando effect on some part of the underlying notes length.
+    Glissando(Repartition, Vec<Wrappers>),
     /// Vibrato effect for some part of the underlying notes length.
     Vibrato(Repartition, VibratoConfig, Vec<Wrappers>),
     /// Volume applied to underlying notes.
@@ -183,5 +206,9 @@ pub enum Wrappers {
     /// ADSR applies a volume envelope to underlying notes.
     ADSR(ADSR, Vec<Wrappers>),
     /// Single note or rest, the atom of the DOM.
-    Singleton(Items), //TODO: finish this enum with elements found in Musescore
+    Singleton(Items),
+    /// Mask definition.
+    Mask(MaskType, Mask),
+    /// Masks items using the mask ID.
+    Masked(u8, Vec<Wrappers>),
 }
