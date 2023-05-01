@@ -149,9 +149,9 @@ pub struct VolumeFadeConfig {
 /// Acceleration configuration
 pub struct AccelConfig {
     /// Initial tempo.
-    from: u8,
+    from: u16,
     /// Final tempo.
-    to: u8,
+    to: u16,
 }
 
 pub enum MaskType {
@@ -211,4 +211,35 @@ pub enum Wrappers {
     Mask(MaskType, Mask),
     /// Masks items using the mask ID.
     Masked(u8, Vec<Wrappers>),
+}
+
+trait Tagging {
+    fn tag(&self) -> char;
+}
+
+impl Tagging for Wrappers{
+    fn tag(&self) -> char {
+        match self{
+            Wrappers::Song(_, _) => 'S',
+            Wrappers::Album(_, _) => 'A',
+            Wrappers::Artist(_, _) => 'a',
+            Wrappers::Year(_, _) => 'Y',
+            Wrappers::Tempo(_, _) => 'T',
+            Wrappers::Accel(_, _) => 't',
+            Wrappers::NoteDef(_, _) => '',
+            Wrappers::Channel(_) => '',
+            Wrappers::Instrument(_, _) => '',
+            Wrappers::Length(_, _) => '',
+            Wrappers::Octave(_, _) => '',
+            Wrappers::Loop(_, _) => '',
+            Wrappers::Glissando(_, _) => '',
+            Wrappers::Vibrato(_, _, _) => '',
+            Wrappers::Volume(_, _) => '',
+            Wrappers::VolumeFader(_, _) => '',
+            Wrappers::ADSR(_, _) => '',
+            Wrappers::Singleton(_) => '',
+            Wrappers::Mask(_, _) => '',
+            Wrappers::Masked(_, _) => '',
+        }
+    }
 }
