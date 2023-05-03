@@ -1,53 +1,56 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while1},
-    character::complete::{char, space0},
-    combinator::{map, opt},
-    multi::{many0, separated_list1},
-    sequence::{delimited, tuple},
-    IResult,
+    bytes::complete::is_not,
+    character::complete::{char, digit1, multispace1, newline},
+    combinator::{map_res, value},
+    error::ParseError,
+    multi::many0,
+    sequence::{delimited, pair, preceded, Tuple},
+    IResult, Map, Parser,
 };
 
 use crate::structure::Wrappers;
 
-fn parse_first(input: &str) -> IResult<&str, Wrappers> {
-    map(
-        tuple((
-            tag("first"),
-            space0,
-            take_while1(|c: char| c != '('),
-            delimited(
-                char('('),
-                separated_list1(tag(" "), parse_enum_object),
-                char(')'),
-            ),
-        )),
-        |(_, _, param, objects)| Wrappers::First(param.to_owned(), objects),
-    )(input)
+pub fn parse(i: &str) -> Result<(&str, char), nom::Err<()>> {
+    let length = char::<&str, ()>('l');
+    length(i)
 }
 
-fn parse_second(input: &str) -> IResult<&str, Wrappers> {
-    map(
-        tuple((
-            tag("second"),
-            space0,
-            take_while1(|c: char| c != '('),
-            delimited(
-                char('('),
-                separated_list1(tag(" "), parse_enum_object),
-                char(')'),
-            ),
-        )),
-        |(_, _, param, objects)| Wrappers::Second(param.to_owned(), objects),
-    )(input)
+fn space<'a>(i: &'a str) -> IResult<&'a str, (), nom::error::VerboseError<&str>> {
+    value((), multispace1)(i)
 }
 
-// Add more parsers here for other enum objects as needed
-
-fn parse_enum_object(input: &str) -> IResult<&str, Wrappers> {
-    alt((parse_first, parse_second))(input)
+fn comment<'a>(i: &'a str) -> IResult<&'a str, (), nom::error::VerboseError<&str>> {
+    value(
+        (), // Output is thrown away.
+        delimited(char(';'), is_not("\n\r"), newline),
+    )(i)
 }
 
-fn parse_file(input: &str) -> IResult<&str, Vec<Wrappers>> {
-    many0(delimited(space0, parse_enum_object, space0))(input)
+fn junk<'a>(i: &'a str) -> IResult<&'a str, (), nom::error::VerboseError<&str>> {
+    value((), many0(alt((space, comment))))(i)
+}
+
+#[test]
+fn junk_parser() {
+    assert_eq!(Ok(("oij", ())), space(" \n    \n oij"));
+    assert_eq!(Ok(("hi btw", ())), comment("; comment comemtn\nhi btw"));
+    assert_eq!(
+        Ok(("clean", ())),
+        junk("; some junk \n    ; that's still junk\n;more junk\nclean")
+    )
+}
+
+fn length<'a>(i: &'a str) -> IResult<&'a str, Wrappers, nom::error::VerboseError<&str>> {
+    map_res(preceded(pair(char('l'), junk), digit1), move |o| {
+        Ok::<Wrappers, nom::error::VerboseError<&str>>(Wrappers::Length(
+            o.parse::<u8>().unwrap(),
+            vec![],
+        ))
+    })(i)
+}
+
+#[test]
+fn length_parser() {
+    assert_eq!(Ok(("", Wrappers::Length(1, vec![]))), length("l 1"));
 }

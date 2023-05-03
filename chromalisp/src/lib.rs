@@ -1,3 +1,4 @@
+mod files;
 mod parsers;
 #[allow(unused, dead_code)]
 mod structure;

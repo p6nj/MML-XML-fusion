@@ -5,6 +5,7 @@ use derive_new::new;
 /// Single item contained in Wrappers.<br>
 /// The Note item has frequency information deduced from the note list but both have no length information
 /// (taken from either a higher-level length Wrappers or the default value).
+#[derive(PartialEq, Debug)]
 pub enum Items {
     /// A single note with the index of the note found in the note list.
     Note(u8),
@@ -12,6 +13,7 @@ pub enum Items {
     Rest,
 }
 
+#[derive(PartialEq, Debug)]
 pub enum MaskItems {
     Note(i8),
     Rest,
@@ -19,6 +21,7 @@ pub enum MaskItems {
 
 /// Time relative to the duration of a note.
 /// Can be either static (in ms) or dynamic (in note length percentage up to 255).
+#[derive(PartialEq, Debug)]
 pub enum Time {
     /// Static duration measured in milliseconds.
     Static(Duration),
@@ -33,6 +36,7 @@ pub enum Time {
 /// <i>
 /// Whole shouldn't be the same as a Start(Dynamic(255)) or something else as some effects have a different action on the start or end of the note and may act different if applied to a whole note. This way abstractions may be used to compare these two cases instead of using a normal attribute to theoretically speed up the process.
 /// </i>
+#[derive(PartialEq, Debug)]
 pub enum Repartition {
     /// Whole note.
     Whole,
@@ -45,7 +49,7 @@ pub enum Repartition {
 }
 
 /// Generic ADSR member.
-#[derive(new)]
+#[derive(new, PartialEq, Debug)]
 pub struct AdsrComponent {
     /// Time it takes to get to the final value (`until`).
     /// Can be calculated as a percentage of the note length left with the Time enum.
@@ -62,7 +66,7 @@ impl Default for AdsrComponent {
 
 /// ADSR effect filter to control the volume of the note during a trigger.
 /// A pizz. effect can be achieved with ADSR.
-#[derive(new)]
+#[derive(new, PartialEq, Debug)]
 pub struct ADSR {
     attack: AdsrComponent,
     decay: AdsrComponent,
@@ -72,6 +76,7 @@ pub struct ADSR {
 
 /// Dynamics are used instead of a volume for simplicity.
 /// FortePiano isn't included but can be achieved with ADSR.
+#[derive(PartialEq, Debug)]
 pub enum Dynamics {
     Pianississimo,
     Pianissimo,
@@ -84,6 +89,7 @@ pub enum Dynamics {
 }
 
 /// Instrument operations, allowing scalars to alter the frequency.
+#[derive(PartialEq, Debug)]
 pub enum Operations {
     /// Multiply the frequency.
     Multiply(u8),
@@ -101,7 +107,7 @@ impl Default for Tuning {
 }
 
 /// Instrument tuning.
-#[derive(new)]
+#[derive(new, PartialEq, Debug)]
 pub enum Tuning {
     /// Static tuning without dependencies.
     Static { tuning: u16 },
@@ -110,6 +116,7 @@ pub enum Tuning {
 }
 
 /// Instruments collection.
+#[derive(PartialEq, Debug)]
 pub enum Instruments {
     /// Basic sine wave.
     Sine(Tuning),
@@ -127,7 +134,7 @@ pub enum Instruments {
 }
 
 /// Vibrato configuration.
-#[derive(new)]
+#[derive(new, PartialEq, Debug)]
 pub struct VibratoConfig {
     /// Amplitude of the vibrato, in tenths of a frequency whole interval (10 means it will touch the whole note above and below).
     amplitude: u8,
@@ -136,7 +143,7 @@ pub struct VibratoConfig {
 }
 
 /// Volume fader configuration.
-#[derive(new)]
+#[derive(new, PartialEq, Debug)]
 pub struct VolumeFadeConfig {
     /// Initial volume.
     from: Dynamics,
@@ -147,6 +154,7 @@ pub struct VolumeFadeConfig {
 }
 
 /// Acceleration configuration
+#[derive(PartialEq, Debug)]
 pub struct AccelConfig {
     /// Initial tempo.
     from: u16,
@@ -154,6 +162,7 @@ pub struct AccelConfig {
     to: u16,
 }
 
+#[derive(PartialEq, Debug)]
 pub enum MaskType {
     Rhythm,
     Note,
@@ -164,12 +173,14 @@ pub enum MaskType {
 /// rhythm and notes applied either on all input notes (there must be as much input notes as
 /// mask notes) or one input note (to apply i.e. a tremolo effect).<br>
 /// A note applied on another note transposes it by addition (applying a 3 on a 1 gives a 4).
+#[derive(PartialEq, Debug)]
 pub struct Mask {
     id: u8,
     layer: Vec<MaskItems>,
 }
 
 /// Wrappers that can either contain an Item or another Wrappers with more information based on the variant.
+#[derive(PartialEq, Debug)]
 pub enum Wrappers {
     /// The title of the underlying song.
     Song(String, Vec<Wrappers>),
@@ -211,9 +222,11 @@ pub enum Wrappers {
     Mask(MaskType, Mask),
     /// Masks items using the mask ID.
     Masked(u8, Vec<Wrappers>),
+    Test(String, Vec<Wrappers>),
+    Test2(String, Vec<Wrappers>),
 }
 
-trait Tagging {
+pub trait Tagging {
     fn tag(&self) -> char;
 }
 
@@ -240,6 +253,8 @@ impl Tagging for Wrappers {
             Wrappers::Singleton(_) => unimplemented!(),
             Wrappers::Mask(_, _) => 'M',
             Wrappers::Masked(_, _) => 'm',
+            Wrappers::Test(_, _) => 'Y',
+            Wrappers::Test2(_, _) => 'A',
         }
     }
 }
