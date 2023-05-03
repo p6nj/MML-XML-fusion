@@ -180,7 +180,7 @@ pub struct Mask {
 }
 
 /// Wrappers that can either contain an Item or another Wrappers with more information based on the variant.
-#[derive(PartialEq, Debug)]
+#[derive(new, PartialEq, Debug)]
 pub enum Wrappers {
     /// The title of the underlying song.
     Song(String, Vec<Wrappers>),
@@ -226,35 +226,60 @@ pub enum Wrappers {
     Test2(String, Vec<Wrappers>),
 }
 
+pub enum W {
+    Song,
+    Album,
+    Artist,
+    Year,
+    Tempo,
+    Accel,
+    NoteDef,
+    Channel,
+    Instrument,
+    Length,
+    Octave,
+    Loop,
+    Glissando,
+    Vibrato,
+    Volume,
+    VolumeFader,
+    ADSR,
+    Singleton,
+    Mask,
+    Masked,
+    Test,
+    Test2,
+}
+
 pub trait Tagging {
     fn tag(&self) -> char;
 }
 
-impl Tagging for Wrappers {
+impl Tagging for W {
     fn tag(&self) -> char {
         match self {
-            Wrappers::Song(_, _) => 'S',
-            Wrappers::Album(_, _) => 'A',
-            Wrappers::Artist(_, _) => 'a',
-            Wrappers::Year(_, _) => 'Y',
-            Wrappers::Tempo(_, _) => 'T',
-            Wrappers::Accel(_, _) => 't',
-            Wrappers::NoteDef(_, _) => 'N',
-            Wrappers::Channel(_) => 'C',
-            Wrappers::Instrument(_, _) => 'I',
-            Wrappers::Length(_, _) => 'l',
-            Wrappers::Octave(_, _) => 'o',
-            Wrappers::Loop(_, _) => 'x',
-            Wrappers::Glissando(_, _) => 'G',
-            Wrappers::Vibrato(_, _, _) => 'V',
-            Wrappers::Volume(_, _) => 'v',
-            Wrappers::VolumeFader(_, _) => 'F',
-            Wrappers::ADSR(_, _) => '~',
-            Wrappers::Singleton(_) => unimplemented!(),
-            Wrappers::Mask(_, _) => 'M',
-            Wrappers::Masked(_, _) => 'm',
-            Wrappers::Test(_, _) => 'Y',
-            Wrappers::Test2(_, _) => 'A',
+            W::Song => 'S',
+            W::Album => 'A',
+            W::Artist => 'a',
+            W::Year => 'Y',
+            W::Tempo => 'T',
+            W::Accel => 't',
+            W::NoteDef => 'N',
+            W::Channel => 'C',
+            W::Instrument => 'I',
+            W::Length => 'l',
+            W::Octave => 'o',
+            W::Loop => 'x',
+            W::Glissando => 'G',
+            W::Vibrato => 'V',
+            W::Volume => 'v',
+            W::VolumeFader => 'F',
+            W::ADSR => '~',
+            W::Singleton => unimplemented!(),
+            W::Mask => 'M',
+            W::Masked => 'm',
+            W::Test => 'Y',
+            W::Test2 => 'A',
         }
     }
 }
