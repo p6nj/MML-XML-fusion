@@ -226,6 +226,7 @@ pub enum Wrappers {
     Test2(String, Vec<Wrappers>),
 }
 
+#[derive(Clone, Copy)]
 pub enum W {
     Song,
     Album,

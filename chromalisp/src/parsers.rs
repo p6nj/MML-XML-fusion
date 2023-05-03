@@ -39,7 +39,7 @@ fn junk_parser() {
 }
 
 fn wrapper<'a, F, P, O>(
-    wrap: W,
+    tag: char,
     parser: P,
     transform: F,
 ) -> impl Fn(&'a str) -> IResult<&'a str, Wrappers>
@@ -48,16 +48,14 @@ where
     P: Fn(&'a str) -> IResult<&'a str, O> + Copy,
 {
     move |i: &'a str| {
-        map_res(preceded(pair(char(wrap.tag()), junk), parser), move |o| {
+        map_res(preceded(pair(char(tag), junk), parser), move |o| {
             Ok::<Wrappers, ErrorKind>(transform(o))
         })(i)
     }
 }
 
-fn length<'a>(i: &'a str) -> IResult<&'a str, Wrappers> {
-    wrapper(W::Length, digit1, |o| {
-        Wrappers::Length(o.parse::<u8>().unwrap(), vec![])
-    })(i)
+fn length(i: &'static str) -> IResult<&'static str, Wrappers> {
+    W::Length.parse()(i)
 }
 
 #[test]
@@ -72,8 +70,62 @@ fn length_parser() {
     );
 }
 
-trait Parser<O> {
-    fn parse<'a>(self, i: &'a str) -> IResult<&'a str, O>;
+trait WrapperParser {
+    fn parse(self) -> Box<dyn Fn(&'static str) -> IResult<&'static str, Wrappers>>;
 }
 
-// impl<Wrappers> Parser<Wrappers> for W {}
+impl WrapperParser for W {
+    fn parse(self) -> Box<dyn Fn(&'static str) -> IResult<&'static str, Wrappers>> {
+        Box::new(wrapper(
+            self.tag(),
+            match self {
+                W::Song => todo!(),
+                W::Album => todo!(),
+                W::Artist => todo!(),
+                W::Year => todo!(),
+                W::Tempo => todo!(),
+                W::Accel => todo!(),
+                W::NoteDef => todo!(),
+                W::Channel => todo!(),
+                W::Instrument => todo!(),
+                W::Length => digit1,
+                W::Octave => digit1,
+                W::Loop => todo!(),
+                W::Glissando => todo!(),
+                W::Vibrato => todo!(),
+                W::Volume => todo!(),
+                W::VolumeFader => todo!(),
+                W::ADSR => todo!(),
+                W::Singleton => todo!(),
+                W::Mask => todo!(),
+                W::Masked => todo!(),
+                W::Test => todo!(),
+                W::Test2 => todo!(),
+            },
+            move |o| match self {
+                W::Song => todo!(),
+                W::Album => todo!(),
+                W::Artist => todo!(),
+                W::Year => todo!(),
+                W::Tempo => todo!(),
+                W::Accel => todo!(),
+                W::NoteDef => todo!(),
+                W::Channel => todo!(),
+                W::Instrument => todo!(),
+                W::Length => Wrappers::Length(o.parse::<u8>().unwrap(), vec![]),
+                W::Octave => Wrappers::Octave(o.parse::<u8>().unwrap(), vec![]),
+                W::Loop => todo!(),
+                W::Glissando => todo!(),
+                W::Vibrato => todo!(),
+                W::Volume => todo!(),
+                W::VolumeFader => todo!(),
+                W::ADSR => todo!(),
+                W::Singleton => todo!(),
+                W::Mask => todo!(),
+                W::Masked => todo!(),
+                W::Test => todo!(),
+                W::Test2 => todo!(),
+            },
+        ))
+    }
+}
