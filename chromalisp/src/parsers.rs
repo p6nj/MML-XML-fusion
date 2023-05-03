@@ -1,10 +1,10 @@
 use nom::{
     branch::alt,
-    bytes::complete::is_not,
+    bytes::complete::{is_not, take_till1},
     character::complete::{char, digit1, multispace1, newline},
     combinator::{map_res, value},
     error::ErrorKind,
-    multi::many0,
+    multi::{many0, many1},
     sequence::{delimited, pair, preceded},
     IResult,
 };
@@ -79,7 +79,11 @@ impl WrapperParser for W {
         Box::new(wrapper(
             self.tag(),
             match self {
-                W::Song => todo!(),
+                W::Song => alt((
+                    delimited(char('\''), take_till1(|c| c == '\''), char('\'')),
+                    delimited(char('"'), take_till1(|c| c == '"'), char('"')),
+                    take_till1(|c| c == ' '),
+                )),
                 W::Album => todo!(),
                 W::Artist => todo!(),
                 W::Year => todo!(),
