@@ -1,4 +1,4 @@
-use crate::structure::{Tagging, Wrappers, W};
+use crate::structure::{AccelConfig, Tagging, Wrappers, W};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, take_till1},
@@ -48,7 +48,7 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
         w.tag(),
         move |i| -> IResult<&str, Vec<&str>> {
             match w {
-                W::Song | W::Album | W::Artist => map_res(
+                W::Song | W::Album | W::Artist | W::Channel => map_res(
                     alt((
                         delimited(char('\''), take_till1(|c| c == '\''), char('\'')),
                         delimited(char('"'), take_till1(|c| c == '"'), char('"')),
@@ -61,7 +61,6 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
                     move |(o1, o2)| -> Result<Vec<&str>, ErrorKind> { Ok(vec![o1, o2]) },
                 )(i),
                 W::NoteDef => todo!(),
-                W::Channel => todo!(),
                 W::Instrument => todo!(),
                 W::Length | W::Octave | W::Year | W::Tempo | W::Loop => {
                     map_res(digit1, move |o| -> Result<Vec<&str>, ErrorKind> {
@@ -86,13 +85,19 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
             W::Artist => Wrappers::Artist(o.get(0).unwrap().to_string(), vec![]),
             W::Year => Wrappers::Year(o.get(0).unwrap().parse().unwrap(), vec![]),
             W::Tempo => Wrappers::Tempo(o.get(0).unwrap().parse().unwrap(), vec![]),
-            W::Accel => todo!(),
+            W::Accel => Wrappers::Accel(
+                AccelConfig::new(
+                    o.get(0).unwrap().parse().unwrap(),
+                    o.get(1).unwrap().parse().unwrap(),
+                ),
+                vec![],
+            ),
             W::NoteDef => todo!(),
-            W::Channel => todo!(),
+            W::Channel => Wrappers::Channel(o.get(0).unwrap().to_string(), vec![]),
             W::Instrument => todo!(),
             W::Length => Wrappers::Length(o.get(0).unwrap().parse().unwrap(), vec![]),
             W::Octave => Wrappers::Octave(o.get(0).unwrap().parse().unwrap(), vec![]),
-            W::Loop => todo!(),
+            W::Loop => Wrappers::Loop(o.get(0).unwrap().parse().unwrap(), vec![]),
             W::Glissando => todo!(),
             W::Vibrato => todo!(),
             W::Volume => todo!(),

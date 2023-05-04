@@ -154,7 +154,7 @@ pub struct VolumeFadeConfig {
 }
 
 /// Acceleration configuration
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, new)]
 pub struct AccelConfig {
     /// Initial tempo.
     from: u16,
@@ -197,7 +197,7 @@ pub enum Wrappers {
     /// The notes names used for the interface.
     NoteDef(Vec<String>, Vec<Wrappers>),
     /// The channel name for the underlying notes.
-    Channel(Vec<Wrappers>),
+    Channel(String, Vec<Wrappers>),
     /// Instrument used for the underlying notes.
     Instrument(Instruments, Vec<Wrappers>),
     /// Length of the underlying notes described by the number of notes in a beat.
