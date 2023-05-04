@@ -12,7 +12,7 @@
                                 0 1 2                       ; normal notes with default length and octave, code is the index of the note in the note list of the note def wrapper in hex up to 2 digits.
                                 (l 4 1 2)                   ; length with the number of notes in a beat (DIFFERENT from decimal rhythm representation, here odd numbers are tuplets) in hex up to 2 digits.
                                 (o 4 1 2)                   ; octave in hex up to 2 digits.
-                                (x 2 1 2)                   ; loop two times (number in argument)
+                                (x 2 1 2)                   ; loop two times (hex number in argument)
                                 (G '10 0 1 2)               ; glissando with the sliding time at the beginning, static (decimal numbers indicated by ') in ms or percentage (2 digit hex) of the note length, and the sliding time at the end with the same parameter.
                                 (V 1 1 '10 f0 1 2)          ; vibrato with the amplitude (hex), frequency (hex), and the other repartition parameters defined above for legato.
                                 (v pp 1 2)                  ; volume, overrides default mf (MezzoForte, see enum) with dynamics written just like on sheet music.
