@@ -1,14 +1,18 @@
-use crate::structure::{AccelConfig, Tagging, Wrappers, W};
+use crate::structure::{AccelConfig, Repartition, Tagging, Time, Wrappers, W};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, take_till1},
-    character::complete::{char, digit1, multispace1, newline},
-    combinator::{map_res, value},
-    error::ErrorKind,
+    character::{
+        complete::{char, digit1, multispace1, newline},
+        streaming::hex_digit1,
+    },
+    combinator::{map_res, recognize, value},
+    error::{ErrorKind, VerboseError},
     multi::many0,
-    sequence::{delimited, pair, preceded, separated_pair, terminated},
+    sequence::{delimited, pair, preceded, separated_pair},
     IResult,
 };
+use std::time::Duration;
 
 pub fn parse(i: &str) {}
 
@@ -43,6 +47,26 @@ where
     }
 }
 
+fn hex_or_dec(i: &str) -> IResult<&str, &str> {
+    alt((recognize(preceded(char('\''), digit1)), hex_digit1))(i)
+}
+
+fn hex_or_dec_resolve(i: &str) -> (u8, bool) {
+    alt((
+        map_res(
+            preceded(char::<&str, VerboseError<&str>>('\''), digit1),
+            move |s: &str| -> Result<(u8, bool), ErrorKind> {
+                Ok((s.parse::<u8>().unwrap(), false))
+            },
+        ),
+        map_res(hex_digit1, move |o| -> Result<(u8, bool), ErrorKind> {
+            Ok((u8::from_str_radix(o, 16).unwrap(), true))
+        }),
+    ))(i)
+    .unwrap()
+    .1
+}
+
 fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
     wrapper_parser_generator(
         w.tag(),
@@ -67,7 +91,10 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
                         Ok(vec![o])
                     })(i)
                 }
-                W::Glissando => todo!(),
+                W::Glissando => map_res(
+                    separated_pair(hex_or_dec, junk, hex_or_dec),
+                    move |(o1, o2)| -> Result<Vec<&str>, ErrorKind> { Ok(vec![o1, o2]) },
+                )(i),
                 W::Vibrato => todo!(),
                 W::Volume => todo!(),
                 W::VolumeFader => todo!(),
@@ -98,7 +125,27 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
             W::Length => Wrappers::Length(o.get(0).unwrap().parse().unwrap(), vec![]),
             W::Octave => Wrappers::Octave(o.get(0).unwrap().parse().unwrap(), vec![]),
             W::Loop => Wrappers::Loop(o.get(0).unwrap().parse().unwrap(), vec![]),
-            W::Glissando => todo!(),
+            W::Glissando => Wrappers::Glissando(
+                Repartition::new(
+                    {
+                        let result = hex_or_dec_resolve(o.get(0).unwrap());
+                        if result.1 {
+                            Time::Dynamic(result.0)
+                        } else {
+                            Time::Static(Duration::from_millis(result.0.into()))
+                        }
+                    },
+                    {
+                        let result = hex_or_dec_resolve(o.get(1).unwrap());
+                        if result.1 {
+                            Time::Dynamic(result.0)
+                        } else {
+                            Time::Static(Duration::from_millis(result.0.into()))
+                        }
+                    },
+                ),
+                vec![],
+            ),
             W::Vibrato => todo!(),
             W::Volume => todo!(),
             W::VolumeFader => todo!(),
@@ -114,7 +161,7 @@ fn wrapper(w: W) -> impl Fn(&'static str) -> IResult<&'static str, Wrappers> {
 
 #[cfg(test)]
 mod base_tests {
-    use super::{comment, junk, space};
+    use super::{comment, hex_or_dec, junk, space};
     #[test]
     fn junk_parser() {
         assert_eq!(Ok(("oij", ())), space(" \n    \n oij"));
@@ -124,10 +171,16 @@ mod base_tests {
             junk("; some junk \n    ; that's still junk\n;more junk\nclean")
         )
     }
+    #[test]
+    fn hex_or_dec_parser() {
+        assert_eq!(Ok(("", "'12")), hex_or_dec("'12"));
+    }
 }
 
 #[cfg(test)]
 mod wrapper_tests {
+    use crate::structure::AccelConfig;
+
     use super::{wrapper, Wrappers, W};
     #[test]
     fn length_parser() {
@@ -149,6 +202,15 @@ mod wrapper_tests {
         assert_eq!(
             Ok(("", Wrappers::Song("Song".to_string(), vec![]))),
             parser("S 'Song'")
+        );
+    }
+
+    #[test]
+    fn accel_parser() {
+        let parser = wrapper(W::Accel);
+        assert_eq!(
+            Ok(("", Wrappers::Accel(AccelConfig::new(12, 16), vec![]))),
+            parser("t 12 16")
         );
     }
 }
