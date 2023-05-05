@@ -1,4 +1,6 @@
+#[allow(unused, dead_code)]
 mod files;
+#[allow(unused, dead_code)]
 mod parsers;
 #[allow(unused, dead_code)]
 mod structure;
