@@ -3,12 +3,12 @@ use nom::{
     branch::alt,
     bytes::complete::{is_not, take_till1},
     character::{
-        complete::{char, digit1, multispace1, newline},
+        complete::{char, digit1, multispace1, newline, one_of},
         streaming::hex_digit1,
     },
     combinator::{map_res, recognize, value},
     error::{dbg_dmp, ErrorKind, VerboseError},
-    multi::many0,
+    multi::{many0, many1},
     sequence::{delimited, pair, preceded, separated_pair},
     IResult,
 };
@@ -55,9 +55,15 @@ fn hex_or_dec(i: &str) -> IResult<&str, (u8, bool)> {
                 Ok((s.parse::<u8>().unwrap(), false))
             },
         ),
-        map_res(hex_digit1, move |o| -> Result<(u8, bool), ErrorKind> {
-            Ok((u8::from_str_radix(o, 16).unwrap(), true))
-        }),
+        map_res(
+            many1(one_of("0123456789abcdef")),
+            move |o| -> Result<(u8, bool), ErrorKind> {
+                Ok((
+                    u8::from_str_radix(o.iter().collect::<String>().as_str(), 16).unwrap(),
+                    true,
+                ))
+            },
+        ),
     ))(i)
 }
 
@@ -150,7 +156,7 @@ mod base_tests {
     #[test]
     fn hex_or_dec_parser() {
         assert_eq!(Ok(("", (12, false))), hex_or_dec("'12"));
-        assert_eq!(Ok(("", (12, true))), hex_or_dec("12"));
+        assert_eq!(Ok(("", (18, true))), hex_or_dec("12"));
     }
 }
 
