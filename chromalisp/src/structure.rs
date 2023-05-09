@@ -36,10 +36,19 @@ pub enum Time {
 /// <i>
 /// Whole shouldn't be the same as a Start(Dynamic(255)) or something else as some effects have a different action on the start or end of the note and may act different if applied to a whole note. This way abstractions may be used to compare these two cases instead of using a normal attribute to theoretically speed up the process.
 /// </i>
-#[derive(PartialEq, Debug, new)]
+#[derive(PartialEq, Debug)]
 pub struct Repartition {
     start: Time,
     end: Time,
+}
+
+impl Repartition {
+    pub fn new(i: (Time, Time)) -> Self {
+        Repartition {
+            start: i.0,
+            end: i.1,
+        }
+    }
 }
 
 /// Generic ADSR member.

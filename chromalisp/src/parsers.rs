@@ -67,11 +67,15 @@ fn hex_or_dec(i: &str) -> IResult<&str, (u8, bool)> {
     ))(i)
 }
 
-fn glissando_repartition_helper(o: u8, b: bool) -> Time {
-    match b {
-        true => Time::Dynamic(o),
-        false => Time::Static(Duration::from_millis(o.into())),
+fn rephelp(i: (u8, bool)) -> Time {
+    match i.1 {
+        true => Time::Dynamic(i.0),
+        false => Time::Static(Duration::from_millis(i.0.into())),
     }
+}
+
+fn rephelp2(i: ((u8, bool), (u8, bool))) -> (Time, Time) {
+    (rephelp(i.0), rephelp(i.1))
 }
 
 fn arg_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
@@ -100,9 +104,15 @@ fn artist(i: &str) -> IResult<&str, Wrappers> {
     })(i)
 }
 
-fn channel(i: &str) -> IResult<&str, Wrappers> {
-    wrapper_parser_generator(W::Channel.tag(), arg_string, move |o| {
-        Wrappers::Channel(o.to_string(), vec![])
+fn year(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Year.tag(), arg_string, move |o| {
+        Wrappers::Year(o.parse().unwrap(), vec![])
+    })(i)
+}
+
+fn tempo(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Tempo.tag(), digit1, move |o| {
+        Wrappers::Tempo(o.parse().unwrap(), vec![])
     })(i)
 }
 
@@ -119,9 +129,31 @@ fn accel(i: &str) -> IResult<&str, Wrappers> {
     )(i)
 }
 
+// NoteDef needs the parser accumulator
+
+fn channel(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Channel.tag(), arg_string, move |o| {
+        Wrappers::Channel(o.to_string(), vec![])
+    })(i)
+}
+
+// Instrument needs the parser accumulator
+
 fn length(i: &str) -> IResult<&str, Wrappers> {
     wrapper_parser_generator(W::Length.tag(), digit1, move |o| {
         Wrappers::Length(o.parse().unwrap(), vec![])
+    })(i)
+}
+
+fn octave(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Octave.tag(), digit1, move |o| {
+        Wrappers::Octave(o.parse().unwrap(), vec![])
+    })(i)
+}
+
+fn loop_(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Loop.tag(), digit1, move |o| {
+        Wrappers::Loop(o.parse().unwrap(), vec![])
     })(i)
 }
 
@@ -129,15 +161,7 @@ fn glissando(i: &str) -> IResult<&str, Wrappers> {
     wrapper_parser_generator(
         W::Glissando.tag(),
         move |i| separated_pair(hex_or_dec, junk, hex_or_dec)(i),
-        move |(o1, o2)| {
-            Wrappers::Glissando(
-                Repartition::new(
-                    glissando_repartition_helper(o1.0, o1.1),
-                    glissando_repartition_helper(o2.0, o1.1),
-                ),
-                vec![],
-            )
-        },
+        move |(o1, o2)| Wrappers::Glissando(Repartition::new(rephelp2((o1, o2))), vec![]),
     )(i)
 }
 
@@ -199,7 +223,7 @@ mod wrapper_tests {
             Ok((
                 "",
                 Wrappers::Glissando(
-                    Repartition::new(Time::Static(Duration::from_millis(10)), Time::Dynamic(0)),
+                    Repartition::new((Time::Static(Duration::from_millis(10)), Time::Dynamic(0))),
                     vec![]
                 )
             )),

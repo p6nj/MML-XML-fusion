@@ -1,5 +1,8 @@
 {
     "rust-analyzer.linkedProjects": [
         "./chromalisp/Cargo.toml"
+    ],
+    "cSpell.words": [
+        "rephelp"
     ]
 }
