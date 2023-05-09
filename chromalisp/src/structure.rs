@@ -79,7 +79,7 @@ pub struct ADSR {
 
 /// Dynamics are used instead of a volume for simplicity.
 /// FortePiano isn't included but can be achieved with ADSR.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Dynamics {
     Pianississimo,
     Pianissimo,

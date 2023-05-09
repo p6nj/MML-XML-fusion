@@ -1,14 +1,16 @@
-use crate::structure::{AccelConfig, Repartition, Tagging, Time, VibratoConfig, Wrappers, W};
+use crate::structure::{
+    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, Wrappers, W,
+};
 use nom::{
     branch::alt,
-    bytes::complete::{is_not, take_till1},
+    bytes::complete::{is_not, tag, take_till1},
     character::{
         complete::{char, digit1, multispace1, newline, one_of},
         streaming::hex_digit1,
     },
-    combinator::{map_res, recognize, value},
+    combinator::{map_res, opt, recognize, value},
     error::{dbg_dmp, ErrorKind, VerboseError},
-    multi::{many0, many1},
+    multi::{count, many0, many1},
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
@@ -16,19 +18,62 @@ use std::time::Duration;
 
 pub fn parse(i: &str) {}
 
-fn space<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn space(i: &str) -> IResult<&str, ()> {
     value((), multispace1)(i)
 }
 
-fn comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn comment(i: &str) -> IResult<&str, ()> {
     value(
         (), // Output is thrown away.
         delimited(char(';'), is_not("\n\r"), newline),
     )(i)
 }
 
-fn junk<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn junk(i: &str) -> IResult<&str, ()> {
     value((), many0(alt((space, comment))))(i)
+}
+
+fn dynamics(i: &str) -> IResult<&str, Dynamics, VerboseError<&str>> {
+    map_res(
+        tuple((
+            opt(char('m')),
+            alt((
+                map_res(
+                    count(char('f'), 3),
+                    move |o| -> Result<Dynamics, ErrorKind> {
+                        Ok(match o.len() {
+                            1 => Dynamics::Forte,
+                            2 => Dynamics::Fortissimo,
+                            3 => Dynamics::Fortississimo,
+                            _ => unreachable!(),
+                        })
+                    },
+                ),
+                map_res(
+                    count(char('p'), 3),
+                    move |o| -> Result<Dynamics, ErrorKind> {
+                        Ok(match o.len() {
+                            1 => Dynamics::Piano,
+                            2 => Dynamics::Pianissimo,
+                            3 => Dynamics::Pianississimo,
+                            _ => unreachable!(),
+                        })
+                    },
+                ),
+            )),
+        )),
+        move |(mezzo, o)| -> Result<Dynamics, ErrorKind> {
+            Ok(if mezzo.is_some() {
+                match o {
+                    Dynamics::Forte => Dynamics::MezzoForte,
+                    Dynamics::Piano => Dynamics::MezzoPiano,
+                    _ => unreachable!(),
+                }
+            } else {
+                o
+            })
+        },
+    )(i)
 }
 
 fn wrapper_parser_generator<'a, F, P, O>(
@@ -191,7 +236,7 @@ fn vibrato(i: &str) -> IResult<&str, Wrappers> {
 
 #[cfg(test)]
 mod base_tests {
-    use super::{comment, hex_or_dec, junk, space};
+    use super::{comment, dynamics, hex_or_dec, junk, space, Dynamics};
     #[test]
     fn junk_parser() {
         assert_eq!(Ok(("oij", ())), space(" \n    \n oij"));
@@ -205,6 +250,10 @@ mod base_tests {
     fn hex_or_dec_parser() {
         assert_eq!(Ok(("", (12, false))), hex_or_dec("'12"));
         assert_eq!(Ok(("", (18, true))), hex_or_dec("12"));
+    }
+    #[test]
+    fn dynamics_parser() {
+        assert_eq!(Ok(("", Dynamics::Forte)), dynamics("f"));
     }
 }
 
