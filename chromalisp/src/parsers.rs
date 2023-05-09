@@ -1,4 +1,4 @@
-use crate::structure::{AccelConfig, Repartition, Tagging, Time, Wrappers, W};
+use crate::structure::{AccelConfig, Repartition, Tagging, Time, VibratoConfig, Wrappers, W};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, take_till1},
@@ -9,7 +9,7 @@ use nom::{
     combinator::{map_res, recognize, value},
     error::{dbg_dmp, ErrorKind, VerboseError},
     multi::{many0, many1},
-    sequence::{delimited, pair, preceded, separated_pair},
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
 use std::time::Duration;
@@ -55,15 +55,9 @@ fn hex_or_dec(i: &str) -> IResult<&str, (u8, bool)> {
                 Ok((s.parse::<u8>().unwrap(), false))
             },
         ),
-        map_res(
-            many1(one_of("0123456789abcdef")),
-            move |o| -> Result<(u8, bool), ErrorKind> {
-                Ok((
-                    u8::from_str_radix(o.iter().collect::<String>().as_str(), 16).unwrap(),
-                    true,
-                ))
-            },
-        ),
+        map_res(hex, move |o| -> Result<(u8, bool), ErrorKind> {
+            Ok((o, true))
+        }),
     ))(i)
 }
 
@@ -76,6 +70,15 @@ fn rephelp(i: (u8, bool)) -> Time {
 
 fn rephelp2(i: ((u8, bool), (u8, bool))) -> (Time, Time) {
     (rephelp(i.0), rephelp(i.1))
+}
+
+fn hex(i: &str) -> IResult<&str, u8> {
+    map_res(
+        many1(one_of("123456789abcdef")),
+        move |o| -> Result<u8, ErrorKind> {
+            Ok(u8::from_str_radix(o.iter().collect::<String>().as_str(), 16).unwrap())
+        },
+    )(i)
 }
 
 fn arg_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
@@ -165,6 +168,27 @@ fn glissando(i: &str) -> IResult<&str, Wrappers> {
     )(i)
 }
 
+fn vibrato(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(
+        W::Vibrato.tag(),
+        move |i| {
+            tuple((
+                terminated(hex, junk),
+                terminated(hex, junk),
+                terminated(hex_or_dec, junk),
+                hex_or_dec,
+            ))(i)
+        },
+        move |(amp, fre, start, end)| {
+            Wrappers::Vibrato(
+                Repartition::new(rephelp2((start, end))),
+                VibratoConfig::new(amp, fre),
+                vec![],
+            )
+        },
+    )(i)
+}
+
 #[cfg(test)]
 mod base_tests {
     use super::{comment, hex_or_dec, junk, space};
@@ -229,5 +253,20 @@ mod wrapper_tests {
             )),
             parser("G '10 0")
         );
+    }
+    #[test]
+    fn vibrato_parser() {
+        let parser = vibrato;
+        assert_eq!(
+            Ok((
+                "",
+                Wrappers::Vibrato(
+                    Repartition::new(rephelp2(((10, false), (1, true)))),
+                    VibratoConfig::new(1, 1),
+                    vec![],
+                )
+            )),
+            parser("V 1 1 '10 1")
+        )
     }
 }
