@@ -70,11 +70,20 @@ impl Default for AdsrComponent {
 /// ADSR effect filter to control the volume of the note during a trigger.
 /// A pizz. effect can be achieved with ADSR.
 #[derive(new, PartialEq, Debug)]
-pub struct ADSR {
+pub struct ADS {
     attack: AdsrComponent,
     decay: AdsrComponent,
     sustain: AdsrComponent,
-    release: Duration,
+}
+
+impl Default for ADS {
+    fn default() -> Self {
+        ADS::new(
+            AdsrComponent::default(),
+            AdsrComponent::default(),
+            AdsrComponent::default(),
+        )
+    }
 }
 
 /// Dynamics are used instead of a volume for simplicity.
@@ -218,7 +227,7 @@ pub enum Wrappers {
     /// Volume fade applied to underlying notes.
     VolumeFader(VolumeFadeConfig, Vec<Wrappers>),
     /// ADSR applies a volume envelope to underlying notes.
-    ADSR(ADSR, Vec<Wrappers>),
+    ADS(ADS, Vec<Wrappers>),
     /// Single note or rest, the atom of the DOM.
     Singleton(Items),
     /// Mask definition.
@@ -247,7 +256,7 @@ pub enum W {
     Vibrato,
     Volume,
     VolumeFader,
-    ADSR,
+    ADS,
     Singleton,
     Mask,
     Masked,
@@ -278,7 +287,7 @@ impl Tagging for W {
             W::Vibrato => 'V',
             W::Volume => 'v',
             W::VolumeFader => 'F',
-            W::ADSR => '~',
+            W::ADS => '~',
             W::Singleton => unimplemented!(),
             W::Mask => 'M',
             W::Masked => 'm',

@@ -1,5 +1,6 @@
 use crate::structure::{
-    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, VolumeFadeConfig, Wrappers, W,
+    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, VolumeFadeConfig, Wrappers,
+    ADS, W,
 };
 use nom::{
     branch::alt,
@@ -10,7 +11,7 @@ use nom::{
     },
     combinator::{map_res, opt, recognize, value},
     error::{dbg_dmp, ErrorKind, VerboseError},
-    multi::{count, many0, many1},
+    multi::{count, many0, many1, many_m_n},
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
@@ -250,6 +251,36 @@ fn volume_fader(i: &str) -> IResult<&str, Wrappers> {
     )(i)
 }
 
+fn ads(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(
+        W::ADS.tag(),
+        move |i| many_m_n(1, 3, separated_pair(hex_or_dec, junk, hex))(i),
+        move |o| {
+            Wrappers::ADS(
+                match o.len() {
+                    1 => ADS {
+                        attack: todo!(),
+                        decay: todo!(),
+                        sustain: todo!(),
+                    },
+                    2 => ADS {
+                        attack: todo!(),
+                        decay: todo!(),
+                        sustain: todo!(),
+                    },
+                    3 => ADS {
+                        attack: todo!(),
+                        decay: todo!(),
+                        sustain: todo!(),
+                    },
+                    _ => ADS::default(),
+                },
+                vec![],
+            )
+        },
+    )(i)
+}
+
 #[cfg(test)]
 mod base_tests {
     use crate::parsers::bool_digit;
@@ -353,10 +384,16 @@ mod wrapper_tests {
         );
     }
     #[test]
-    fn volume_fader_parser(){
-        let parser=volume_fader;
+    fn volume_fader_parser() {
+        let parser = volume_fader;
         assert_eq!(
-            Ok(("",Wrappers::VolumeFader(VolumeFadeConfig::new(Dynamics::Forte, Dynamics::Piano, false), vec![]))),
+            Ok((
+                "",
+                Wrappers::VolumeFader(
+                    VolumeFadeConfig::new(Dynamics::Forte, Dynamics::Piano, false),
+                    vec![]
+                )
+            )),
             parser("F f p 0")
         );
     }
