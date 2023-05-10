@@ -1,5 +1,5 @@
 use crate::structure::{
-    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, Wrappers, W,
+    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, VolumeFadeConfig, Wrappers, W,
 };
 use nom::{
     branch::alt,
@@ -33,33 +33,27 @@ fn junk(i: &str) -> IResult<&str, ()> {
     value((), many0(alt((space, comment))))(i)
 }
 
-fn dynamics(i: &str) -> IResult<&str, Dynamics, VerboseError<&str>> {
+fn dynamics(i: &str) -> IResult<&str, Dynamics> {
     map_res(
         tuple((
             opt(char('m')),
             alt((
-                map_res(
-                    count(char('f'), 3),
-                    move |o| -> Result<Dynamics, ErrorKind> {
-                        Ok(match o.len() {
-                            1 => Dynamics::Forte,
-                            2 => Dynamics::Fortissimo,
-                            3 => Dynamics::Fortississimo,
-                            _ => unreachable!(),
-                        })
-                    },
-                ),
-                map_res(
-                    count(char('p'), 3),
-                    move |o| -> Result<Dynamics, ErrorKind> {
-                        Ok(match o.len() {
-                            1 => Dynamics::Piano,
-                            2 => Dynamics::Pianissimo,
-                            3 => Dynamics::Pianississimo,
-                            _ => unreachable!(),
-                        })
-                    },
-                ),
+                map_res(many1(char('f')), move |o| -> Result<Dynamics, ErrorKind> {
+                    Ok(match o.len() {
+                        1 => Dynamics::Forte,
+                        2 => Dynamics::Fortissimo,
+                        3 => Dynamics::Fortississimo,
+                        _ => unreachable!(),
+                    })
+                }),
+                map_res(many1(char('p')), move |o| -> Result<Dynamics, ErrorKind> {
+                    Ok(match o.len() {
+                        1 => Dynamics::Piano,
+                        2 => Dynamics::Pianissimo,
+                        3 => Dynamics::Pianississimo,
+                        _ => unreachable!(),
+                    })
+                }),
             )),
         )),
         move |(mezzo, o)| -> Result<Dynamics, ErrorKind> {
@@ -74,6 +68,12 @@ fn dynamics(i: &str) -> IResult<&str, Dynamics, VerboseError<&str>> {
             })
         },
     )(i)
+}
+
+fn bool_digit(i: &str) -> IResult<&str, bool> {
+    map_res(one_of("01"), move |o| -> Result<bool, ErrorKind> {
+        Ok(o == '1')
+    })(i)
 }
 
 fn wrapper_parser_generator<'a, F, P, O>(
@@ -234,8 +234,26 @@ fn vibrato(i: &str) -> IResult<&str, Wrappers> {
     )(i)
 }
 
+fn volume(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(W::Volume.tag(), dynamics, move |o| {
+        Wrappers::Volume(o, vec![])
+    })(i)
+}
+
+fn volume_fader(i: &str) -> IResult<&str, Wrappers> {
+    wrapper_parser_generator(
+        W::VolumeFader.tag(),
+        move |i| separated_pair(separated_pair(dynamics, junk, dynamics), junk, bool_digit)(i),
+        move |((from, to), inside)| {
+            Wrappers::VolumeFader(VolumeFadeConfig::new(from, to, inside), vec![])
+        },
+    )(i)
+}
+
 #[cfg(test)]
 mod base_tests {
+    use crate::parsers::bool_digit;
+
     use super::{comment, dynamics, hex_or_dec, junk, space, Dynamics};
     #[test]
     fn junk_parser() {
@@ -254,6 +272,14 @@ mod base_tests {
     #[test]
     fn dynamics_parser() {
         assert_eq!(Ok(("", Dynamics::Forte)), dynamics("f"));
+        assert_eq!(Ok(("", Dynamics::Fortissimo)), dynamics("ff"));
+        assert_eq!(Ok(("", Dynamics::Pianississimo)), dynamics("ppp"));
+        assert_eq!(Ok(("", Dynamics::MezzoForte)), dynamics("mf"));
+    }
+    #[test]
+    fn bool_digit_parser() {
+        assert_eq!(Ok(("", true)), bool_digit("1"));
+        assert_eq!(Ok(("", false)), bool_digit("0"));
     }
 }
 
@@ -317,5 +343,21 @@ mod wrapper_tests {
             )),
             parser("V 1 1 '10 1")
         )
+    }
+    #[test]
+    fn volume_parser() {
+        let parser = volume;
+        assert_eq!(
+            Ok(("", Wrappers::Volume(Dynamics::Fortississimo, vec![]))),
+            parser("v fff")
+        );
+    }
+    #[test]
+    fn volume_fader_parser(){
+        let parser=volume_fader;
+        assert_eq!(
+            Ok(("",Wrappers::VolumeFader(VolumeFadeConfig::new(Dynamics::Forte, Dynamics::Piano, false), vec![]))),
+            parser("F f p 0")
+        );
     }
 }
