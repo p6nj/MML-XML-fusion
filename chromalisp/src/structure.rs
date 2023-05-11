@@ -71,9 +71,9 @@ impl Default for AdsrComponent {
 /// A pizz. effect can be achieved with ADSR.
 #[derive(new, PartialEq, Debug)]
 pub struct ADS {
-    attack: AdsrComponent,
-    decay: AdsrComponent,
-    sustain: AdsrComponent,
+    pub attack: AdsrComponent,
+    pub decay: AdsrComponent,
+    pub sustain: AdsrComponent,
 }
 
 impl Default for ADS {

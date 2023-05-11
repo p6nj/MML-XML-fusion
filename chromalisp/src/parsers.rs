@@ -1,6 +1,6 @@
 use crate::structure::{
-    AccelConfig, Dynamics, Repartition, Tagging, Time, VibratoConfig, VolumeFadeConfig, Wrappers,
-    ADS, W,
+    AccelConfig, AdsrComponent, Dynamics, Repartition, Tagging, Time, VibratoConfig,
+    VolumeFadeConfig, Wrappers, ADS, W,
 };
 use nom::{
     branch::alt,
@@ -120,7 +120,7 @@ fn rephelp2(i: ((u8, bool), (u8, bool))) -> (Time, Time) {
 
 fn hex(i: &str) -> IResult<&str, u8> {
     map_res(
-        many1(one_of("123456789abcdef")),
+        many1(one_of("0123456789abcdef")),
         move |o| -> Result<u8, ErrorKind> {
             Ok(u8::from_str_radix(o.iter().collect::<String>().as_str(), 16).unwrap())
         },
@@ -254,24 +254,47 @@ fn volume_fader(i: &str) -> IResult<&str, Wrappers> {
 fn ads(i: &str) -> IResult<&str, Wrappers> {
     wrapper_parser_generator(
         W::ADS.tag(),
-        move |i| many_m_n(1, 3, separated_pair(hex_or_dec, junk, hex))(i),
+        move |i| {
+            many_m_n(
+                1,
+                3,
+                terminated(separated_pair(hex_or_dec, junk, hex), junk),
+            )(i)
+        },
         move |o| {
             Wrappers::ADS(
                 match o.len() {
                     1 => ADS {
-                        attack: todo!(),
-                        decay: todo!(),
-                        sustain: todo!(),
+                        attack: AdsrComponent::new(
+                            rephelp(o.get(0).unwrap().0),
+                            o.get(0).unwrap().1,
+                        ),
+                        ..Default::default()
                     },
                     2 => ADS {
-                        attack: todo!(),
-                        decay: todo!(),
-                        sustain: todo!(),
+                        attack: AdsrComponent::new(
+                            rephelp(o.get(0).unwrap().0),
+                            o.get(0).unwrap().1,
+                        ),
+                        decay: AdsrComponent::new(
+                            rephelp(o.get(1).unwrap().0),
+                            o.get(1).unwrap().1,
+                        ),
+                        ..Default::default()
                     },
                     3 => ADS {
-                        attack: todo!(),
-                        decay: todo!(),
-                        sustain: todo!(),
+                        attack: AdsrComponent::new(
+                            rephelp(o.get(0).unwrap().0),
+                            o.get(0).unwrap().1,
+                        ),
+                        decay: AdsrComponent::new(
+                            rephelp(o.get(1).unwrap().0),
+                            o.get(1).unwrap().1,
+                        ),
+                        sustain: AdsrComponent::new(
+                            rephelp(o.get(2).unwrap().0),
+                            o.get(2).unwrap().1,
+                        ),
                     },
                     _ => ADS::default(),
                 },
@@ -395,6 +418,24 @@ mod wrapper_tests {
                 )
             )),
             parser("F f p 0")
+        );
+    }
+    #[test]
+    fn ads_parser() {
+        let parser = ads;
+        assert_eq!(
+            Ok((
+                "",
+                Wrappers::ADS(
+                    ADS::new(
+                        AdsrComponent::new(Time::Static(Duration::from_millis(1)), 255),
+                        AdsrComponent::new(Time::Dynamic(0), 255),
+                        AdsrComponent::new(Time::Dynamic(255), 255)
+                    ),
+                    vec![]
+                )
+            )),
+            parser("~ '1 ff 0 ff ff ff")
         );
     }
 }
