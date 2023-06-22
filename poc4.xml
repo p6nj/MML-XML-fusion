@@ -1,0 +1,7 @@
+<song xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="poc4.xsd">
+    <name>My First Song</name>
+    <channel>
+        <name>Piano</name>
+    </channel>
+</song>
