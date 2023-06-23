@@ -1,7 +1,9 @@
 <song xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="poc4.xsd">
-    <name>My First Song</name>
-    <channel>
-        <name>Piano</name>
-    </channel>
+  xsi:noNamespaceSchemaLocation="poc4.xsd">
+  <name>My First Song</name>
+  <channel>
+    <name>Piano</name>
+    <notes>!4@4 cd(efg)ab@5 cde[dc_ ]cdg !1c</notes>
+  </channel>
 </song>
+<!-- comment -->

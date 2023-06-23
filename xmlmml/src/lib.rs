@@ -17,8 +17,8 @@ mod tests {
     #[test]
     fn xslt() {
         assert_eq!(
-            "<html><head><title>XSLT in Rust</title></head><body><p>A simple document.</p></body></html>".to_string(),
-            xslt::xml2html("<xml><Title>XSLT in Rust</Title><Paragraph>A simple document.</Paragraph></xml>").unwrap()
-        );
+        "<html><head><title>XSLT in Rust</title></head><body><p>A simple document.</p></body></html>".to_string(),
+        xslt::xml2html("<xml><Title>XSLT in Rust</Title><Paragraph>A simple document.</Paragraph></xml>").unwrap()
+    );
     }
 }
